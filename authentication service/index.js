@@ -8,8 +8,7 @@ app.use(express.json());
 
 const url = "mongodb://localhost:27017";
 const dbName = "produits_service";
-const JWT_SECRET = "votre_secret_jwt_super_securise"; // À remplacer par une variable d'environnement en production
-let db;
+const JWT_SECRET = "votre_secret_jwt_super_securise"; 
 
 async function connectDB() {
   try {
@@ -17,18 +16,16 @@ async function connectDB() {
     console.log("✅ Connexion réussie avec Mongo");
     db = client.db(dbName);
 
-    // Démarrer le serveur une fois la connexion établie
     const PORT = 4002;
     app.listen(PORT, () => {
       console.log(`🚀 Serveur en ligne : http://localhost:${PORT}`);
     });
   } catch (err) {
-    console.error("❌ Erreur de connexion à MongoDB :", err);
-    process.exit(1); // Quitter si la connexion échoue
+    console.error(" Erreur de connexion à MongoDB :", err);
+    process.exit(1); 
   }
 }
 
-// Middleware pour vérifier le token JWT
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
 
@@ -45,12 +42,10 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// Route principale
 app.get("/", (req, res) => {
   res.send("Hi");
 });
 
-// Route d'inscription
 app.post("/auth/register", async (req, res) => {
   const { email, password, nom } = req.body;
 
@@ -59,16 +54,13 @@ app.post("/auth/register", async (req, res) => {
   }
 
   try {
-    // Vérifier si l'utilisateur existe déjà
     const userExists = await db.collection("users").findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: "❌ Cet email est déjà utilisé" });
     }
 
-    // Hasher le mot de passe
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Créer le nouvel utilisateur
     const newUser = {
       email,
       password: hashedPassword,
@@ -76,7 +68,6 @@ app.post("/auth/register", async (req, res) => {
       date_creation: new Date().toISOString(),
     };
 
-    // Sauvegarder l'utilisateur
     await db.collection("users").insertOne(newUser);
 
     res.status(201).json({
@@ -92,7 +83,6 @@ app.post("/auth/register", async (req, res) => {
   }
 });
 
-// Route de connexion
 app.post("/auth/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -117,7 +107,6 @@ app.post("/auth/login", async (req, res) => {
         .json({ message: "❌ Email ou mot de passe incorrect" });
     }
 
-    // Créer le token JWT
     const token = jwt.sign(
       { userId: user._id, email: user.email },
       JWT_SECRET,
@@ -138,7 +127,6 @@ app.post("/auth/login", async (req, res) => {
   }
 });
 
-// Route pour obtenir le profil
 app.get("/auth/profil", verifyToken, async (req, res) => {
   try {
     const user = await db.collection("users").findOne(
